@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Budget Planner</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1,h2{
+    margin-top:0;
+}
+
+input{
+    padding:10px;
+    width:100%;
+    box-sizing:border-box;
+    margin-bottom:10px;
+}
+
+button{
+    padding:10px 16px;
+    background:#0078d4;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#005ea6;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+}
+
+.summary div{
+    background:#eef5ff;
+    padding:15px;
+    border-radius:8px;
+    text-align:center;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border-bottom:1px solid #ddd;
+    padding:10px;
+}
+
+.remaining-positive{
+    color:green;
+}
+
+.remaining-negative{
+    color:red;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+<h1>💰 Paycheck Budget Planner</h1>
+
+<label>Pay Amount ($)</label>
+<input type="number" id="paycheck" placeholder="Enter paycheck amount">
+
+<button onclick="savePaycheck()">Save Paycheck</button>
+</div>
+
+<div class="card">
+<h2>Add Budget Category</h2>
+
+<input type="text" id="categoryName" placeholder="Rent">
+<input type="number" id="categoryAmount" placeholder="Amount">
+
+<button onclick="addCategory()">Add Category</button>
+</div>
+
+<div class="card">
+<h2>Budget Summary</h2>
+
+<div class="summary">
+<div>
+Total Income<br>
+$<span id="income">0</span>
+</div>
+
+<div>
+Budgeted<br>
+$<span id="budgeted">0</span>
+</div>
+
+<div>
+Remaining<br>
+$<span id="remaining">0</span>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>Categories</h2>
+
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Amount</th>
+<th>Delete</th>
+</tr>
+</thead>
+
+<tbody id="budgetTable"></tbody>
+</table>
+</div>
+
+<div class="card">
+<button onclick="resetAll()" style="background:#d83b01">
+Reset Budget
+</button>
+</div>
+
+</div>
+
+<script>
+
+let paycheck = Number(localStorage.getItem("paycheck")) || 0;
+let categories = JSON.parse(localStorage.getItem("categories")) || [];
+
+function saveData(){
+    localStorage.setItem("paycheck", paycheck);
+    localStorage.setItem("categories", JSON.stringify(categories));
+}
+
+function savePaycheck(){
+    paycheck = Number(document.getElementById("paycheck").value);
+    saveData();
+    render();
+}
+
+function addCategory(){
+
+    const name = document.getElementById("categoryName").value;
+    const amount = Number(document.getElementById("categoryAmount").value);
+
+    if(!name || amount <= 0){
+        alert("Enter a category and amount.");
+        return;
+    }
+
+    categories.push({
+        name,
+        amount
+    });
+
+    saveData();
+
+    document.getElementById("categoryName").value = "";
+    document.getElementById("categoryAmount").value = "";
+
+    render();
+}
+
+function deleteCategory(index){
+    categories.splice(index,1);
+    saveData();
+    render();
+}
+
+function render(){
+
+    document.getElementById("income").textContent =
+        paycheck.toFixed(2);
+
+    let budgeted = categories.reduce(
+        (sum,item)=>sum + item.amount,0
+    );
+
+    let remaining = paycheck - budgeted;
+
+    document.getElementById("budgeted").textContent =
+        budgeted.toFixed(2);
+
+    const remainingEl =
+        document.getElementById("remaining");
+
+    remainingEl.textContent =
+        remaining.toFixed(2);
+
+    remainingEl.className =
+        remaining >=0
+        ? "remaining-positive"
+        : "remaining-negative";
+
+    const table =
+        document.getElementById("budgetTable");
+
+    table.innerHTML = "";
+
+    categories.forEach((item,index)=>{
+
+        table.innerHTML += `
+        <tr>
+            <td>${item.name}</td>
+            <td>$${item.amount.toFixed(2)}</td>
+            <td>
+                <button onclick="deleteCategory(${index})">
+                Delete
+                </button>
+            </td>
+        </tr>`;
+    });
+}
+
+function resetAll(){
+
+    if(confirm("Reset entire budget?")){
+        paycheck = 0;
+        categories = [];
+
+        localStorage.clear();
+
+        render();
+    }
+}
+
+document.getElementById("paycheck").value = paycheck;
+
+render();
+
+</script>
+
+</body>
+</html>
