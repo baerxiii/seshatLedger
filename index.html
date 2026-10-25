@@ -1,263 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Budget Planner</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seshat Ledger</title>
+    <meta
+      name="description"
+      content="A polished personal budget planner with account sync powered by Supabase."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Seshat Ledger</p>
+          <h1>Budget Planner</h1>
+        </div>
 
-<style>
-body{
-    font-family:Arial,sans-serif;
-    background:#f4f6f9;
-    margin:0;
-    padding:20px;
-}
+        <div class="auth-panel">
+          <div class="auth-row">
+            <input id="emailInput" type="email" placeholder="Email" aria-label="Email" />
+            <input id="passwordInput" type="password" placeholder="Password" aria-label="Password" />
+          </div>
 
-.container{
-    max-width:900px;
-    margin:auto;
-}
+          <div class="auth-actions">
+            <button id="signInBtn" type="button" class="primary-btn">Sign In</button>
+            <button id="signUpBtn" type="button" class="secondary-btn">Create Account</button>
+            <button id="signOutBtn" type="button" class="ghost-btn" disabled>Sign Out</button>
+          </div>
 
-.card{
-    background:white;
-    padding:20px;
-    margin-bottom:20px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
-}
+          <p id="authStatus" class="auth-status" aria-live="polite">Checking account status...</p>
+        </div>
+      </header>
 
-h1,h2{
-    margin-top:0;
-}
+      <main class="content-grid">
+        <section class="card accent-card">
+          <div class="section-header">
+            <h2>Income</h2>
+          </div>
 
-input{
-    padding:10px;
-    width:100%;
-    box-sizing:border-box;
-    margin-bottom:10px;
-}
+          <label class="field-label" for="paycheckInput">Monthly paycheck</label>
+          <div class="input-row">
+            <span class="currency">$</span>
+            <input id="paycheckInput" type="number" step="0.01" min="0" placeholder="0.00" />
+          </div>
 
-button{
-    padding:10px 16px;
-    background:#0078d4;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-}
+          <button id="savePaycheckBtn" type="button" class="primary-btn full-width">Save Paycheck</button>
+        </section>
 
-button:hover{
-    background:#005ea6;
-}
+        <section class="card">
+          <div class="section-header">
+            <h2>Add Category</h2>
+          </div>
 
-.summary{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:15px;
-}
+          <label class="field-label" for="categoryName">Category</label>
+          <input id="categoryName" type="text" placeholder="Rent, groceries, utilities..." />
 
-.summary div{
-    background:#eef5ff;
-    padding:15px;
-    border-radius:8px;
-    text-align:center;
-    font-weight:bold;
-}
+          <label class="field-label" for="categoryAmount">Amount</label>
+          <div class="input-row">
+            <span class="currency">$</span>
+            <input id="categoryAmount" type="number" step="0.01" min="0" placeholder="0.00" />
+          </div>
 
-table{
-    width:100%;
-    border-collapse:collapse;
-}
+          <button id="addCategoryBtn" type="button" class="primary-btn full-width">Add Category</button>
+        </section>
 
-th,td{
-    border-bottom:1px solid #ddd;
-    padding:10px;
-}
+        <section class="card summary-card">
+          <div class="section-header">
+            <h2>Overview</h2>
+          </div>
 
-.remaining-positive{
-    color:green;
-}
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="label">Income</span>
+              <strong id="incomeValue">$0.00</strong>
+            </div>
 
-.remaining-negative{
-    color:red;
-}
-</style>
-</head>
+            <div class="summary-item">
+              <span class="label">Budgeted</span>
+              <strong id="budgetedValue">$0.00</strong>
+            </div>
 
-<body>
+            <div class="summary-item highlight">
+              <span class="label">Remaining</span>
+              <strong id="remainingValue">$0.00</strong>
+            </div>
+          </div>
+        </section>
 
-<div class="container">
+        <section class="card table-card">
+          <div class="section-header split-header">
+            <h2>Categories</h2>
+            <button id="resetBtn" type="button" class="danger-btn">Reset</button>
+          </div>
 
-<div class="card">
-<h1>💰 Paycheck Budget Planner</h1>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="budgetTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
 
-<label>Pay Amount ($)</label>
-<input type="number" id="paycheck" placeholder="Enter paycheck amount">
-
-<button onclick="savePaycheck()">Save Paycheck</button>
-</div>
-
-<div class="card">
-<h2>Add Budget Category</h2>
-
-<input type="text" id="categoryName" placeholder="Rent">
-<input type="number" id="categoryAmount" placeholder="Amount">
-
-<button onclick="addCategory()">Add Category</button>
-</div>
-
-<div class="card">
-<h2>Budget Summary</h2>
-
-<div class="summary">
-<div>
-Total Income<br>
-$<span id="income">0</span>
-</div>
-
-<div>
-Budgeted<br>
-$<span id="budgeted">0</span>
-</div>
-
-<div>
-Remaining<br>
-$<span id="remaining">0</span>
-</div>
-</div>
-</div>
-
-<div class="card">
-<h2>Categories</h2>
-
-<table>
-<thead>
-<tr>
-<th>Category</th>
-<th>Amount</th>
-<th>Delete</th>
-</tr>
-</thead>
-
-<tbody id="budgetTable"></tbody>
-</table>
-</div>
-
-<div class="card">
-<button onclick="resetAll()" style="background:#d83b01">
-Reset Budget
-</button>
-</div>
-
-</div>
-
-<script>
-
-let paycheck = Number(localStorage.getItem("paycheck")) || 0;
-let categories = JSON.parse(localStorage.getItem("categories")) || [];
-
-function saveData(){
-    localStorage.setItem("paycheck", paycheck);
-    localStorage.setItem("categories", JSON.stringify(categories));
-}
-
-function savePaycheck(){
-    paycheck = Number(document.getElementById("paycheck").value);
-    saveData();
-    render();
-}
-
-function addCategory(){
-
-    const name = document.getElementById("categoryName").value;
-    const amount = Number(document.getElementById("categoryAmount").value);
-
-    if(!name || amount <= 0){
-        alert("Enter a category and amount.");
-        return;
-    }
-
-    categories.push({
-        name,
-        amount
-    });
-
-    saveData();
-
-    document.getElementById("categoryName").value = "";
-    document.getElementById("categoryAmount").value = "";
-
-    render();
-}
-
-function deleteCategory(index){
-    categories.splice(index,1);
-    saveData();
-    render();
-}
-
-function render(){
-
-    document.getElementById("income").textContent =
-        paycheck.toFixed(2);
-
-    let budgeted = categories.reduce(
-        (sum,item)=>sum + item.amount,0
-    );
-
-    let remaining = paycheck - budgeted;
-
-    document.getElementById("budgeted").textContent =
-        budgeted.toFixed(2);
-
-    const remainingEl =
-        document.getElementById("remaining");
-
-    remainingEl.textContent =
-        remaining.toFixed(2);
-
-    remainingEl.className =
-        remaining >=0
-        ? "remaining-positive"
-        : "remaining-negative";
-
-    const table =
-        document.getElementById("budgetTable");
-
-    table.innerHTML = "";
-
-    categories.forEach((item,index)=>{
-
-        table.innerHTML += `
-        <tr>
-            <td>${item.name}</td>
-            <td>$${item.amount.toFixed(2)}</td>
-            <td>
-                <button onclick="deleteCategory(${index})">
-                Delete
-                </button>
-            </td>
-        </tr>`;
-    });
-}
-
-function resetAll(){
-
-    if(confirm("Reset entire budget?")){
-        paycheck = 0;
-        categories = [];
-
-        localStorage.clear();
-
-        render();
-    }
-}
-
-document.getElementById("paycheck").value = paycheck;
-
-render();
-
-</script>
-
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      window.SESHAT_CONFIG = {
+        supabaseUrl: "https://cujvvxyadxvlfvhgzlki.supabase.co",
+        supabaseAnonKey: "sb_publishable_wogqNQurYqmvOx9FvoFxMQ_XyRMTxZ_"
+      };
+    </script>
+    <script src="app.js"></script>
+  </body>
 </html>
