@@ -1,6 +1,7 @@
 const supabaseUrl = window.SESHAT_CONFIG?.supabaseUrl;
 const supabaseAnonKey = window.SESHAT_CONFIG?.supabaseAnonKey;
-const supabase = supabaseUrl && supabaseAnonKey
+
+const supabaseClient = supabaseUrl && supabaseAnonKey
   ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
@@ -52,19 +53,19 @@ function writeLocalBudget() {
 }
 
 async function getCurrentUser() {
-  if (!supabase) return null;
-  const { data: { user }, error } = await supabase.auth.getUser();
+  if (!supabaseClient) return null;
+  const { data: { user }, error } = await supabaseClient.auth.getUser();
   if (error || !user) return null;
   return user;
 }
 
 async function loadBudgetFromSupabase() {
-  if (!supabase) return readLocalBudget();
+  if (!supabaseClient) return readLocalBudget();
 
   const user = await getCurrentUser();
   if (!user) return readLocalBudget();
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("seshat_budget")
     .select("*")
     .eq("user_id", user.id)
@@ -83,7 +84,7 @@ async function loadBudgetFromSupabase() {
 }
 
 async function saveBudgetToSupabase() {
-  if (!supabase) {
+  if (!supabaseClient) {
     writeLocalBudget();
     return;
   }
@@ -94,7 +95,7 @@ async function saveBudgetToSupabase() {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from("seshat_budget")
     .upsert(
       [{
@@ -111,13 +112,6 @@ async function saveBudgetToSupabase() {
     console.error("Supabase save failed:", error);
     writeLocalBudget();
   }
-}
-
-async function loadBudget() {
-  const remoteData = await loadBudgetFromSupabase();
-  budgetState = remoteData;
-  syncInputs();
-  render();
 }
 
 function syncInputs() {
@@ -205,10 +199,10 @@ async function resetBudget() {
   budgetState = { paycheck: 0, categories: [] };
   writeLocalBudget();
 
-  if (supabase) {
+  if (supabaseClient) {
     const user = await getCurrentUser();
     if (user) {
-      await supabase.from("seshat_budget").upsert([
+      await supabaseClient.from("seshat_budget").upsert([
         {
           id: user.id,
           user_id: user.id,
@@ -224,7 +218,7 @@ async function resetBudget() {
 }
 
 async function updateAuthUI() {
-  if (!supabase) {
+  if (!supabaseClient) {
     elements.authStatus.textContent = "Supabase not configured. Budget data is local-only.";
     elements.signInBtn.disabled = true;
     elements.signUpBtn.disabled = true;
@@ -243,7 +237,7 @@ async function updateAuthUI() {
 }
 
 async function signIn() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
 
   const email = elements.email.value.trim();
   const password = elements.password.value.trim();
@@ -253,7 +247,7 @@ async function signIn() {
     return;
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
   if (error) {
     elements.authStatus.textContent = error.message;
@@ -262,11 +256,16 @@ async function signIn() {
 
   elements.password.value = "";
   await updateAuthUI();
-  await loadBudget();
+  const user = await getCurrentUser();
+  if (user) {
+    budgetState = await loadBudgetFromSupabase();
+    syncInputs();
+    render();
+  }
 }
 
 async function signUp() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
 
   const email = elements.email.value.trim();
   const password = elements.password.value.trim();
@@ -276,7 +275,7 @@ async function signUp() {
     return;
   }
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabaseClient.auth.signUp({ email, password });
 
   if (error) {
     elements.authStatus.textContent = error.message;
@@ -288,8 +287,8 @@ async function signUp() {
 }
 
 async function signOut() {
-  if (!supabase) return;
-  await supabase.auth.signOut();
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
   await updateAuthUI();
 }
 
@@ -298,12 +297,11 @@ async function init() {
   syncInputs();
   render();
 
-  if (supabase) {
+  if (supabaseClient) {
     await updateAuthUI();
     const user = await getCurrentUser();
     if (user) {
-      const remote = await loadBudgetFromSupabase();
-      budgetState = remote;
+      budgetState = await loadBudgetFromSupabase();
       render();
     }
   }
