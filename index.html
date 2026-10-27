@@ -6,11 +6,11 @@
     <title>Seshat Ledger</title>
     <meta
       name="description"
-      content="A polished personal budget planner with account sync powered by Supabase."
+      content="A personal budget planner with custom accounts and trend tracking."
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-page="budget">
     <div class="app-shell">
       <header class="topbar">
         <div>
@@ -18,23 +18,13 @@
           <h1>Budget Planner</h1>
         </div>
 
-        <div class="auth-panel">
-          <div class="auth-row">
-            <input id="emailInput" type="email" placeholder="Email" aria-label="Email" />
-            <input id="passwordInput" type="password" placeholder="Password" aria-label="Password" />
-          </div>
-
-          <div class="auth-actions">
-            <button id="signInBtn" type="button" class="primary-btn">Sign In</button>
-            <button id="signUpBtn" type="button" class="secondary-btn">Create Account</button>
-            <button id="signOutBtn" type="button" class="ghost-btn" disabled>Sign Out</button>
-          </div>
-
-          <p id="authStatus" class="auth-status" aria-live="polite">Checking account status...</p>
-        </div>
+        <nav class="nav-tabs" aria-label="Main navigation">
+          <a class="nav-link active" href="index.html">Budget</a>
+          <a class="nav-link" href="dashboard.html">Trends</a>
+        </nav>
       </header>
 
-      <main class="content-grid">
+      <main class="content-grid budget-layout">
         <section class="card accent-card">
           <div class="section-header">
             <h2>Income</h2>
@@ -51,7 +41,7 @@
 
         <section class="card">
           <div class="section-header">
-            <h2>Add Category</h2>
+            <h2>Add Expense</h2>
           </div>
 
           <label class="field-label" for="categoryName">Category</label>
@@ -63,7 +53,51 @@
             <input id="categoryAmount" type="number" step="0.01" min="0" placeholder="0.00" />
           </div>
 
-          <button id="addCategoryBtn" type="button" class="primary-btn full-width">Add Category</button>
+          <label class="field-label" for="budgetMonth">Month</label>
+          <input id="budgetMonth" type="month" />
+
+          <label class="field-label" for="budgetAccount">Account</label>
+          <select id="budgetAccount" class="select-field">
+            <option value="">Select an account</option>
+          </select>
+
+          <button id="addCategoryBtn" type="button" class="primary-btn full-width">Add to Budget</button>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>Accounts</h2>
+          </div>
+
+          <div class="account-form-grid">
+            <div>
+              <label class="field-label" for="accountName">Account name</label>
+              <input id="accountName" type="text" placeholder="Checking, Savings..." />
+            </div>
+
+            <div>
+              <label class="field-label" for="accountType">Type</label>
+              <select id="accountType" class="select-field">
+                <option value="Checking">Checking</option>
+                <option value="Savings">Savings</option>
+                <option value="Credit">Credit</option>
+                <option value="Cash">Cash</option>
+                <option value="Investment">Investment</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="field-label" for="accountBalance">Balance</label>
+              <div class="input-row">
+                <span class="currency">$</span>
+                <input id="accountBalance" type="number" step="0.01" min="0" placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+
+          <button id="addAccountBtn" type="button" class="secondary-btn full-width">Add Account</button>
+          <div id="accountList" class="account-list"></div>
         </section>
 
         <section class="card summary-card">
@@ -89,9 +123,9 @@
           </div>
         </section>
 
-        <section class="card table-card">
+        <section class="card table-card wide-card">
           <div class="section-header split-header">
-            <h2>Categories</h2>
+            <h2>Budget Entries</h2>
             <button id="resetBtn" type="button" class="danger-btn">Reset</button>
           </div>
 
@@ -100,6 +134,8 @@
               <thead>
                 <tr>
                   <th>Category</th>
+                  <th>Month</th>
+                  <th>Account</th>
                   <th>Amount</th>
                   <th>Action</th>
                 </tr>
@@ -111,13 +147,6 @@
       </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-      window.SESHAT_CONFIG = {
-        supabaseUrl: "https://cujvvxyadxvlfvhgzlki.supabase.co",
-        supabaseAnonKey: "sb_publishable_wogqNQurYqmvOx9FvoFxMQ_XyRMTxZ_"
-      };
-    </script>
     <script src="app.js"></script>
   </body>
 </html>
