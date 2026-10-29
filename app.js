@@ -1,3 +1,24 @@
+async function getCurrentUser(){
+
+    const {
+        data:{user}
+    } = await window.ledgerSB
+        .auth
+        .getUser();
+
+    return user;
+}
+
+getCurrentUser()
+.then(user=>{
+
+    console.log(
+        "Ledger User:",
+        user
+    );
+
+});
+
 const STORAGE_KEY = "seshatBudgetStateV1";
 
 function uid() {
