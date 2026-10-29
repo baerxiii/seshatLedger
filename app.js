@@ -215,9 +215,71 @@ function render() {
   renderTable();
 }
 
-function savePaycheck() {
-  const value = Number(elements.paycheckInput.value || 0);
-  budgetState.paycheck = Number.isFinite(value) ? value : 0;
+async function loadPaycheckFromSupabase(){
+
+    const user =
+        await getCurrentUser();
+
+    const {
+        data,
+        error
+    } =
+    await window.ledgerSB
+        .from("ledger_settings")
+        .select("*")
+        .eq(
+            "user_id",
+            user.id
+        )
+        .single();
+
+    if(error){
+
+        console.log(
+            "No paycheck record yet."
+        );
+
+        return;
+    }
+
+    budgetState.paycheck =
+        data.paycheck || 0;
+
+    render();
+}
+
+async function savePaycheck() {
+
+  const value =
+    Number(
+      elements.paycheckInput.value || 0
+    );
+
+  budgetState.paycheck =
+    Number.isFinite(value)
+      ? value
+      : 0;
+
+  const user =
+    await getCurrentUser();
+
+  const result =
+    await window.ledgerSB
+      .from("ledger_settings")
+      .upsert({
+
+        user_id:user.id,
+
+        paycheck:
+          budgetState.paycheck
+
+      });
+
+  console.log(
+    "Paycheck Save:",
+    result
+  );
+
   writeState();
   render();
 }
@@ -289,6 +351,8 @@ function initBudgetPage() {
   if (elements.addAccountBtn) elements.addAccountBtn.addEventListener("click", addAccount);
   if (elements.resetBtn) elements.resetBtn.addEventListener("click", resetBudget);
   render();
+
+loadPaycheckFromSupabase();
 }
 
 if (document.body && document.body.dataset.page === "budget") {
